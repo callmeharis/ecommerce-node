@@ -9,11 +9,5 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.get("/logout", logout);
-// router.post(
-//   "/create-user",
-//   authenticateUser,
-//   authorizeRoles("admin"),
-//   createUser
-// );
 
 module.exports = router;

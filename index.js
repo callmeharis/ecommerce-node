@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 
 // routers
 const authRouter = require("./routes/authRoutes");
+const productRouter = require("./routes/productRoutes");
 
 // middleware
 const notFoundMiddleware = require("./middleware/not-found");
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use(cookieParser(process.env.JWT_SECRET));
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/product", productRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

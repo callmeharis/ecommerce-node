@@ -1,24 +1,48 @@
-const { UnauthenticatedError } = require('../errors');
-const jwt = require('jsonwebtoken')
-const User = require('../models/User')
+const { UnauthenticatedError } = require("../errors");
+const { User } = require("../models/User");
+const jwt = require("jsonwebtoken");
 
-const auth = async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer")) {
-        throw new UnauthenticatedError("Authentication invalid")
+const authenticateUser = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer")) {
+    throw new UnauthenticatedError("Authentication invalid");
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    // Verify the token
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Fetch the user from the database
+    const user = await User.findById(payload.userId).select("-password");
+
+    if (!user) {
+      throw new UnauthenticatedError("Authentication invalid");
     }
-    const token = authHeader.split(" ")[1]
 
-    try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET)
-        // const user = User.findById(payload.id).select('-password')
-        // res.user = user // next line is alternate version of these two lines
-        // attach the user to the job routes
-        req.user = { userId: payload.userId, name: payload.name }
-        next()
-    } catch (error) {
-        throw new UnauthenticatedError("Authentication invalid")
+    // Attach the user details to req.user
+    req.user = {
+      userId: user._id,
+      name: user.name,
+      role: user.role,
+    };
+
+    next();
+  } catch (error) {
+    throw new UnauthenticatedError("Authentication invalid");
+  }
+};
+const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ message: "Access denied. Insufficient permissions." });
     }
-}
+    next();
+  };
+};
 
-module.exports = auth
+module.exports = { authenticateUser, authorizeRoles };
